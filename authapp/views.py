@@ -70,7 +70,7 @@ class DeleteViewSet(viewsets.ViewSet):
         user.delete()
         return Response({'message': 'User deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
-
+# class lead
 class LeadViewSet(viewsets.ModelViewSet):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
