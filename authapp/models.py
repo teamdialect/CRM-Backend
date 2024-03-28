@@ -11,13 +11,12 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.username
     
-class Lead(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, default=None, null=True)    
+class Lead(models.Model):    
     name = models.CharField(max_length=100)
     company = models.CharField(max_length=100)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
-    notes = models.TextField(blank=True)
+    lead_description = models.TextField(blank=True)
     status = models.CharField(max_length=50, choices=[
         ('new', 'New'),
         ('qualifying', 'Qualifying'),
