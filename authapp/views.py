@@ -1,4 +1,3 @@
-from django.shortcuts import render
 # from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,7 +6,9 @@ from authapp.serializers import LeadSerializer, UserSerializer
 from django.contrib.auth import authenticate
 from authapp.models import CustomUser, Lead
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import permissions
+
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class SignUpViewSet(viewsets.ViewSet):
     def create(self, request):
@@ -35,7 +36,12 @@ class LoginViewSet(viewsets.ViewSet):
                 pass
 
         if user is not None:
-            return Response({'message': 'Login successful'}, status=status.HTTP_200_OK)
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'message': 'Login successful',
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }, status= status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid username / email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -74,6 +80,8 @@ class DeleteViewSet(viewsets.ViewSet):
 class LeadViewSet(viewsets.ModelViewSet):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
     def get_queryset(self):
         status = self.request.query_params.get('status')
         if status:
@@ -90,12 +98,15 @@ class LeadViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Lead does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            self.perform_create(serializer)
-            return Response({'message': 'Lead has been successfully added.'}, status=status.HTTP_201_CREATED)
+        if request.user.is_authenticated:
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                self.perform_create(serializer)
+                return Response({'message': 'Lead has been successfully added.'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'error': 'Invalid data', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'error': 'Invalid data', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Authentication credentials were not provided.'}, status= status.HTTP_401_UNAUTHORIZED)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
