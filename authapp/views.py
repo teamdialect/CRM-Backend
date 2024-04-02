@@ -9,7 +9,6 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 
-
 class SignUpViewSet(viewsets.ViewSet):
     def create(self, request):
         serializer = UserSerializer(data=request.data)
@@ -27,11 +26,12 @@ class LoginViewSet(viewsets.ViewSet):
         password = request.data.get('password')
 
         user = authenticate(request, username=username_or_email, password=password)
-
+        
         if user is None:
             try:
-                user = CustomUser.objects.get(email=username_or_email)
+                user = CustomUser.objects.get(email=username_or_email)             
                 user = authenticate(request, username=user.username, password=password)
+               
             except CustomUser.DoesNotExist:
                 pass
 
