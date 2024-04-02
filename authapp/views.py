@@ -2,12 +2,12 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
-from authapp.serializers import LeadSerializer, UserSerializer
-from django.contrib.auth import authenticate
-from authapp.models import CustomUser, Lead
+from authapp.serializers import LeadSerializer, UserSerializer, TaskSerializer
+from authapp.models import CustomUser, Lead, Task
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
 
 class SignUpViewSet(viewsets.ViewSet):
     def create(self, request):
@@ -26,11 +26,12 @@ class LoginViewSet(viewsets.ViewSet):
         password = request.data.get('password')
 
         user = authenticate(request, username=username_or_email, password=password)
-
+        
         if user is None:
             try:
-                user = CustomUser.objects.get(email=username_or_email)
+                user = CustomUser.objects.get(email=username_or_email)             
                 user = authenticate(request, username=user.username, password=password)
+               
             except CustomUser.DoesNotExist:
                 pass
 
@@ -131,3 +132,25 @@ class LeadViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response({'message': 'Lead has been successfully deleted.'}, status=status.HTTP_204_NO_CONTENT)
+    
+
+class TaskViewSet(viewsets.ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                self.perform_create(serializer)
+                return Response({'message': 'Task has been successfully added.'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'error': 'Invalid data', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    
+    
+
+ 

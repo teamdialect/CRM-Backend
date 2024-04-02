@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from authapp.models import CustomUser,Lead
+from authapp.models import CustomUser,Lead,Task
 
 
 class UserSerializer(serializers.ModelSerializer):
       
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'password', 'profile_picture', 'profile_name']
+        fields = fields = ['username', 'email', 'password', 'profile_picture', 'name', 'mobile_number']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
@@ -18,3 +18,9 @@ class LeadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
         fields = "__all__"
+
+
+class TaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = [ 'name', 'description', 'from_date', 'to_date', 'priority', 'checklists']
