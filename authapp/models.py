@@ -49,20 +49,5 @@ class Task(models.Model):
     
 
 
-class Task(models.Model):
-    PRIORITY_CHOICES = [
-        ('low', 'Low'),
-        ('high', 'High'),
-        ('urgent', 'Urgent'),
-    ]
 
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    from_date = models.DateField()
-    to_date = models.DateField()
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES)
-    checklists = models.JSONField(default=list)
-
-    def __str__(self):
-        return self.name
 
