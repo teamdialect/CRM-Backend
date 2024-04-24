@@ -1,5 +1,5 @@
 from django.urls import include, path
-from authapp.views import DeleteViewSet, SignUpViewSet, LoginViewSet, UpdateViewSet, LeadViewSet, TaskViewSet
+from authapp.views import DeleteViewSet, SignUpViewSet, LoginViewSet, UpdateViewSet, LeadViewSet, TaskViewSet, HomeViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from rest_framework import routers
@@ -11,6 +11,7 @@ router.register(r'update', UpdateViewSet, basename='update')
 router.register(r'delete', DeleteViewSet, basename='delete')
 router.register(r'leads', LeadViewSet, basename='leads')
 router.register(r'tasks', TaskViewSet, basename='task')
+router.register(r'home', HomeViewSet, basename='home')
 
 urlpatterns = [
     path('', include(router.urls)),

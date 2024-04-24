@@ -8,6 +8,9 @@ from authapp.models import CustomUser, Lead, Task
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models import Count
+from datetime import date
+
 
 class SignUpViewSet(viewsets.ViewSet):
     def create(self, request):
@@ -149,3 +152,25 @@ class TaskViewSet(viewsets.ModelViewSet):
                 return Response({'error': 'Invalid data', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+class HomeViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        user = request.user
+        total_leads = Lead.objects.count()
+        total_tasks = Task.objects.count()
+        today_tasks = Task.objects.filter(from_date=date.today())
+        today_tasks_serializer = TaskSerializer(today_tasks, many=True)
+        all_tasks = Task.objects.all()
+        all_tasks_serializer = TaskSerializer(all_tasks, many=True)
+
+        response_data = {
+            'userName': user,
+            'totalLeads': total_leads,
+            'totalTasks': total_tasks,
+            'todayTasks': today_tasks_serializer.data,
+            'allTasks': all_tasks_serializer.data,
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
