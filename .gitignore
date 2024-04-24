@@ -1,1 +1,3 @@
 venv/
+authapp/__pycache__
+userauth/__pycache__

@@ -1,13 +1,16 @@
-from django.shortcuts import render
 # from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
-from authapp.serializers import LeadSerializer, UserSerializer
+from authapp.serializers import LeadSerializer, UserSerializer, TaskSerializer
 from django.contrib.auth import authenticate
-from authapp.models import CustomUser, Lead
+from authapp.models import CustomUser, Lead, Task
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models import Count
+from datetime import date
+
 
 class SignUpViewSet(viewsets.ViewSet):
     def create(self, request):
@@ -15,6 +18,7 @@ class SignUpViewSet(viewsets.ViewSet):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request):
@@ -26,16 +30,22 @@ class LoginViewSet(viewsets.ViewSet):
         password = request.data.get('password')
 
         user = authenticate(request, username=username_or_email, password=password)
-
+        
         if user is None:
             try:
-                user = CustomUser.objects.get(email=username_or_email)
+                user = CustomUser.objects.get(email=username_or_email)             
                 user = authenticate(request, username=user.username, password=password)
+               
             except CustomUser.DoesNotExist:
                 pass
 
         if user is not None:
-            return Response({'message': 'Login successful'}, status=status.HTTP_200_OK)
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'message': 'Login successful',
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),   
+            }, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid username / email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -70,10 +80,12 @@ class DeleteViewSet(viewsets.ViewSet):
         user.delete()
         return Response({'message': 'User deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
-
+# class lead
 class LeadViewSet(viewsets.ModelViewSet):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
+    permission_classes = [IsAuthenticated]
+    
     def get_queryset(self):
         status = self.request.query_params.get('status')
         if status:
@@ -90,12 +102,16 @@ class LeadViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Lead does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            self.perform_create(serializer)
-            return Response({'message': 'Lead has been successfully added.'}, status=status.HTTP_201_CREATED)
+        if request.user.is_authenticated:
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                self.perform_create(serializer)
+                return Response({'message': 'Lead has been successfully added.'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'error': 'Invalid data', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'error': 'Invalid data', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -120,3 +136,41 @@ class LeadViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response({'message': 'Lead has been successfully deleted.'}, status=status.HTTP_204_NO_CONTENT)
+    
+class TaskViewSet(viewsets.ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                self.perform_create(serializer)
+                return Response({'message': 'Task has been successfully added.'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'error': 'Invalid data', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+class HomeViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        user = request.user
+        total_leads = Lead.objects.count()
+        total_tasks = Task.objects.count()
+        today_tasks = Task.objects.filter(from_date=date.today())
+        today_tasks_serializer = TaskSerializer(today_tasks, many=True)
+        all_tasks = Task.objects.all()
+        all_tasks_serializer = TaskSerializer(all_tasks, many=True)
+
+        response_data = {
+            'userName': user,
+            'totalLeads': total_leads,
+            'totalTasks': total_tasks,
+            'todayTasks': today_tasks_serializer.data,
+            'allTasks': all_tasks_serializer.data,
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
