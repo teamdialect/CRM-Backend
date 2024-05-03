@@ -1,13 +1,16 @@
-# from rest_framework.views import APIView
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
 from authapp.serializers import LeadSerializer, UserSerializer, TaskSerializer
+from django.contrib.auth import authenticate
 from authapp.models import CustomUser, Lead, Task
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
+from django.db.models import Count
+from datetime import date
+
 
 class SignUpViewSet(viewsets.ViewSet):
     def create(self, request):
@@ -15,6 +18,7 @@ class SignUpViewSet(viewsets.ViewSet):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request):
@@ -48,32 +52,23 @@ class LoginViewSet(viewsets.ViewSet):
     def list(self, request):
         return Response({"message": "This is the login page."})
 
-class UpdateViewSet(viewsets.ViewSet):
-    @action(detail=True, methods=['put'])
-    def update_profile(self, request, pk=None):
-        username = pk
-        try:
-            user = CustomUser.objects.get(username=username)
-        except CustomUser.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+class ProfileViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
 
-        serializer = UserSerializer(user, data=request.data, partial=True)
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            error_message = {'message': 'User update failed', 'errors': serializer.errors}
+            return Response(error_message, status=status.HTTP_400_BAD_REQUEST)
 
-class DeleteViewSet(viewsets.ViewSet):    
-    @action(detail=True, methods=['delete'])
-    def destroy_profile(self, request, pk=None):
-        username = pk
-        try:
-            user = CustomUser.objects.get(username=username)
-        except CustomUser.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        user.delete()
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
         return Response({'message': 'User deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
 # class lead
@@ -133,7 +128,6 @@ class LeadViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response({'message': 'Lead has been successfully deleted.'}, status=status.HTTP_204_NO_CONTENT)
     
-
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
@@ -149,8 +143,26 @@ class TaskViewSet(viewsets.ModelViewSet):
                 return Response({'error': 'Invalid data', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
-    
-    
-    
+        
+class HomeView(APIView):
+    permission_classes = [IsAuthenticated]
 
- 
+    def get(self, request):
+        user = request.user
+        print(user)
+        total_leads = Lead.objects.count()
+        total_tasks = Task.objects.count()
+        today_tasks = Task.objects.filter(from_date=date.today())
+        today_tasks_serializer = TaskSerializer(today_tasks, many=True)
+        all_tasks = Task.objects.all()
+        all_tasks_serializer = TaskSerializer(all_tasks, many=True)
+
+        response_data = {
+            'userName': user.username,
+            'totalLeads': total_leads,
+            'totalTasks': total_tasks,
+            'todayTasks': today_tasks_serializer.data,
+            'allTasks': all_tasks_serializer.data,
+        }
+        print(response_data)
+        return Response(response_data, status=status.HTTP_200_OK)
