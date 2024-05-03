@@ -150,12 +150,15 @@ class HomeView(APIView):
     def get(self, request):
         user = request.user
         print(user)
-        total_leads = Lead.objects.count()
-        total_tasks = Task.objects.count()
-        today_tasks = Task.objects.filter(from_date=date.today())
+
+        user_leads = Lead.objects.filter(assigned_user=user)
+        user_tasks = Task.objects.filter(assigned_user=user)
+        total_leads = user_leads.count()
+        total_tasks = user_tasks.count()
+        today_tasks = user_tasks.filter(from_date=date.today())
         today_tasks_serializer = TaskSerializer(today_tasks, many=True)
-        all_tasks = Task.objects.all()
-        all_tasks_serializer = TaskSerializer(all_tasks, many=True)
+        all_tasks_serializer = TaskSerializer(user_tasks, many=True)
+
 
         response_data = {
             'userName': user.username,
