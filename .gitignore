@@ -1,1 +1,4 @@
 __pycache__/
+.env/
+venv1/
+/authapp/__pycache__/
