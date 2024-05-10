@@ -89,11 +89,25 @@ DATABASES = {
     }
 }
 '''
-import dj_database_url
+# import dj_database_url
+
+# DATABASES = {
+
+#  'default': dj_database_url.parse(env('DATABASE_URL'))
+
+# }
 
 DATABASES = {
 
- 'default': dj_database_url.parse(env('DATABASE_URL'))
+    'default': {
+
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': '',
+        'USER': '<db_username>',
+        'PASSWORD': '<password>',
+        'HOST': '<db_hostname_or_ip>',
+        'PORT': '<db_port>',
+    }
 
 }
 
