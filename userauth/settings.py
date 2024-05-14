@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -29,7 +30,7 @@ environ.Env.read_env()
 SECRET_KEY = 'django-insecure-(=5dao!f1%ptrr8d$m%cj!-3e4d(g^%aw8a=%q(vp!g3@u$^%y'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True    
 
 ALLOWED_HOSTS = ['*']
 
@@ -158,10 +159,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'static'   
+# STATIC_ROOT = os.path.join(BASE_DIR,'static')
+
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
+# https://docs.djangoproect.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
