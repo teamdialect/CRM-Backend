@@ -83,12 +83,12 @@ WSGI_APPLICATION = 'userauth.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 # import dj_database_url
 
@@ -98,19 +98,16 @@ DATABASES = {
 
 # }
 
-# DATABASES = {
-
-#     'default': {
-
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': '',
-#         'USER': '<db_username>',
-#         'PASSWORD': '<password>',
-#         'HOST': '<db_hostname_or_ip>',
-#         'PORT': '<db_port>',
-#     }
-
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'crm_db',
+        'USER': 'postgres',
+        'PASSWORD': 'acernitro5',
+        'HOST': 'crm.crek62g4qp6c.ap-south-1.rds.amazonaws.com',
+        'PORT': '5432',
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
