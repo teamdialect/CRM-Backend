@@ -10,9 +10,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Count
 from datetime import date
+from drf_yasg.utils import swagger_auto_schema
 
 
 class SignUpViewSet(viewsets.ViewSet):
+    @swagger_auto_schema(operation_summary="user signup api")
     def create(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -25,6 +27,7 @@ class SignUpViewSet(viewsets.ViewSet):
         return Response({"message": "This is the signup page."})
 
 class LoginViewSet(viewsets.ViewSet):
+    @swagger_auto_schema(operation_summary="user login api")
     def create(self, request):
         username_or_email = request.data.get('username_or_email')
         password = request.data.get('password')
